@@ -1,0 +1,8 @@
+services:
+  - name: Maxbuyer_shop_bot
+    plan: starter
+    dockerfile: Dockerfile
+    env:
+      - key: TELEGRAM_TOKEN
+        from: secret
+        name: telegram-token
