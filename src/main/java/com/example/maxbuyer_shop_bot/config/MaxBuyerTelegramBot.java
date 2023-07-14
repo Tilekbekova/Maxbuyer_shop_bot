@@ -274,52 +274,53 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
 
     private void handleProductImage(String chatId, Message message) {
-        List<PhotoSize> photoSizes = message.getPhoto();
+        if (adminSessionManager.getCurrentStep() == AdminSessionManager.Step.ENTER_PRODUCT_IMAGE) {
+            // Обработка изображения товара
+            List<PhotoSize> photoSizes = message.getPhoto();
 
-        PhotoSize largestPhoto = photoSizes.stream()
-                .max(Comparator.comparing(PhotoSize::getFileSize))
-                .orElse(null);
+            PhotoSize largestPhoto = photoSizes.stream()
+                    .max(Comparator.comparing(PhotoSize::getFileSize))
+                    .orElse(null);
 
-        if (largestPhoto != null) {
+            if (largestPhoto != null) {
+                String fileId = largestPhoto.getFileId();
 
-            String fileId = largestPhoto.getFileId();
+                GetFile getFileRequest = new GetFile(fileId);
+                try {
+                    org.telegram.telegrambots.meta.api.objects.File file = execute(getFileRequest);
 
+                    String processedImageBase64 = processImage(file.getFileUrl(getBotToken()));
 
-            GetFile getFileRequest = new GetFile(fileId);
-            try {
-                org.telegram.telegrambots.meta.api.objects.File file = execute(getFileRequest);
+                    if (processedImageBase64 != null) {
+                        // Создание и сохранение объекта товара
+                        Product product = new Product();
+                        product.setName(adminSessionManager.getProductName());
+                        product.setPrice(adminSessionManager.getProductPrice());
+                        product.setCategory(adminSessionManager.getProductCategory());
+                        product.setSubcategory(adminSessionManager.getSubcategory());
+                        product.setImageUrl(processedImageBase64);
 
+                        adminProductService.addProduct(product);
 
-                String processedImageBase64 = processImage(file.getFileUrl(getBotToken()));
+                        sendMessage(chatId, "Товар \"" + product.getName() + "\" добавлен в базу данных.");
 
-                if (processedImageBase64 != null) {
-
-                    Product product = new Product();
-                    product.setName(adminSessionManager.getProductName());
-                    product.setPrice(adminSessionManager.getProductPrice());
-                    product.setCategory(adminSessionManager.getProductCategory());
-                    product.setSubcategory(adminSessionManager.getSubcategory());
-                    product.setImageUrl(processedImageBase64);
-
-
-                    adminProductService.addProduct(product);
-
-
-                    sendMessage(chatId, "Товар \"" + product.getName() + "\" добавлен в базу данных.");
-
-
-                    adminSessionManager.reset();
-                } else {
-                    sendMessage(chatId, "Ошибка при обработке изображения. Пожалуйста, повторите попытку.");
+                        // Сброс административной сессии
+                        adminSessionManager.reset();
+                    } else {
+                        sendMessage(chatId, "Ошибка при обработке изображения. Пожалуйста, повторите попытку.");
+                    }
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                    sendMessage(chatId, "Ошибка при обработке изображения");
                 }
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-                sendMessage(chatId, "Ошибка при обработке изображения");
+            } else {
+                sendMessage(chatId, "Изображение не найдено. Пожалуйста, отправьте изображение товара.");
             }
         } else {
-            sendMessage(chatId, "Изображение не найдено. Пожалуйста, отправьте изображение товара.");
+            sendMessage(chatId, "Неожиданное изображение товара. Пожалуйста, начните добавление товара с команды \"Добавить товар\".");
         }
     }
+
 
     private InlineKeyboardMarkup createStartKeyboardMarkup() {
         ;
