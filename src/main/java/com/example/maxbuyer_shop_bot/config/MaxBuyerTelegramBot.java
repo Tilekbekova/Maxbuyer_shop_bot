@@ -98,10 +98,13 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                     sendFAQ(String.valueOf(chatId));
                 } else if (messageText.equalsIgnoreCase("в чем плюсы заказывать одежду/гаджет из Кореи?")) {
                     sendMessage(String.valueOf(chatId), FIRST_QUESTION);
+                    createBack(String.valueOf(chatId));
                 } else if (messageText.equalsIgnoreCase("как заказать?")) {
                     sendMessage(String.valueOf(chatId), SECOND_QUESTION);
+                    createBack(String.valueOf(chatId));
                 } else if (messageText.equalsIgnoreCase("Корзина")) {
                     sendProductsInCart(String.valueOf(chatId));
+                    createBack(String.valueOf(chatId));
                 } else if (messageText.equalsIgnoreCase("Каталог")) {
                     List<String> categoryValues = getCategoryValues();
                     ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
@@ -142,6 +145,8 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
             if (callbackData.equalsIgnoreCase("Start")) {
                 sendMainMenuMessage(String.valueOf(chatId));
+            }else  if (callbackData.equalsIgnoreCase("Back")) {
+                    sendMainMenuMessage(String.valueOf(chatId));
             } else if (callbackData.startsWith("addToCart_")) {
                 String productIdString = callbackData.substring(10);
                 long productId = Long.parseLong(productIdString);
@@ -272,6 +277,27 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         return keyboardMarkup;
     }
 
+    private InlineKeyboardMarkup createBack(String chatId) {
+        InlineKeyboardMarkup backButtonKeyboard = new InlineKeyboardMarkup();
+        InlineKeyboardButton backButton = new InlineKeyboardButton("Назад");
+        backButton.setCallbackData("Back");
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        row.add(backButton);
+        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+        keyboard.add(row);
+        backButtonKeyboard.setKeyboard(keyboard);
+
+        // Отправляем сообщение с клавиатурой
+        SendMessage message = new SendMessage(String.valueOf(chatId), "Вернуться назад:");
+        message.setReplyMarkup(backButtonKeyboard);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+        return backButtonKeyboard;
+    }
+
 
     private void handleProductImage(String chatId, Message message) {
         if (adminSessionManager.getCurrentStep() == AdminSessionManager.Step.ENTER_PRODUCT_IMAGE) {
@@ -336,20 +362,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
     }
 
-    private InlineKeyboardMarkup createContactAdmin() {
-        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
-        InlineKeyboardButton goToPrivateChatButton = new InlineKeyboardButton("Связатся с админом");
-        goToPrivateChatButton.setUrl("https://t.me/" + "?start=[" + ADMIN_CHAT_ID + "]");
 
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        List<InlineKeyboardButton> row = new ArrayList<>();
-        row.add(goToPrivateChatButton);
-        keyboard.add(row);
-
-        keyboardMarkup.setKeyboard(keyboard);
-        return keyboardMarkup;
-
-    }
 
 
     private String processImage(String imageUrl) {
