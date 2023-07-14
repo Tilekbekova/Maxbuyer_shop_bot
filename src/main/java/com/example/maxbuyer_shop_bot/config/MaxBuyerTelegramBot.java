@@ -97,9 +97,9 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 } else if (messageText.equalsIgnoreCase("Часто задаваемые вопросы")) {
                     sendFAQ(String.valueOf(chatId));
                 } else if (messageText.equalsIgnoreCase("в чем плюсы заказывать одежду/гаджет из Кореи?")) {
-                   sendMessage(String.valueOf(chatId),FIRST_QUESTION);
+                    sendMessage(String.valueOf(chatId), FIRST_QUESTION);
                 } else if (messageText.equalsIgnoreCase("как заказать?")) {
-                    sendMessage(String.valueOf(chatId),SECOND_QUESTION);
+                    sendMessage(String.valueOf(chatId), SECOND_QUESTION);
                 } else if (messageText.equalsIgnoreCase("Корзина")) {
                     sendProductsInCart(String.valueOf(chatId));
                 } else if (messageText.equalsIgnoreCase("Каталог")) {
@@ -119,13 +119,13 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                     userSessionManager.setSubcategory(subcategory);
                     sendProductsByCategoryAndSubcategory(String.valueOf(chatId), userSessionManager.getProductCategory(), userSessionManager.getSubcategory());
 
-                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Добавить товар")) {
-                    sendMessage(String.valueOf(chatId), "Введите имя товара:");
-                    adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_NAME);
                 } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Все продукты")) {
                     sendProducts(String.valueOf(chatId));
 
 
+                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Добавить товар")) {
+                    sendMessage(String.valueOf(chatId), "Введите имя товара:");
+                    adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_NAME);
                 } else {
                     handleAdminConversation(String.valueOf(chatId), update);
                 }
@@ -238,7 +238,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
         InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
         adminMessage.setReplyMarkup(keyboardMarkup);
-        sendMessage(chatId,"Заказ отправлен с вами свяжутся");
+        sendMessage(chatId, "Заказ отправлен с вами свяжутся");
 
         try {
             execute(adminMessage);
@@ -271,7 +271,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
         return keyboardMarkup;
     }
-
 
 
     private void handleProductImage(String chatId, Message message) {
@@ -339,7 +338,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
     private InlineKeyboardMarkup createContactAdmin() {
         InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
         InlineKeyboardButton goToPrivateChatButton = new InlineKeyboardButton("Связатся с админом");
-        goToPrivateChatButton.setUrl("https://t.me/"  + "?start=[" + ADMIN_CHAT_ID + "]");
+        goToPrivateChatButton.setUrl("https://t.me/" + "?start=[" + ADMIN_CHAT_ID + "]");
 
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
@@ -350,7 +349,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         return keyboardMarkup;
 
     }
-
 
 
     private String processImage(String imageUrl) {
@@ -577,7 +575,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendFAQ(String chatId) {
-        SendMessage message = new SendMessage(chatId,"Выберите вопрос");
+        SendMessage message = new SendMessage(chatId, "Выберите вопрос");
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         keyboardMarkup.setResizeKeyboard(true);
         keyboardMarkup.setOneTimeKeyboard(true);
@@ -590,11 +588,8 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         row2.add("как заказать?");
 
 
-
-
         keyboard.add(row1);
         keyboard.add(row2);
-
 
 
         keyboardMarkup.setKeyboard(keyboard);
@@ -638,18 +633,17 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
     private void sendProducts(String chatId) {
         List<Product> products = productRepository.findAll();
         if (products.isEmpty()) {
-            sendMessage(chatId, "Нет доступных товаров в выбранной категории и подкатегории.");
+            sendMessage(chatId, "Нет доступных товаров.");
         } else {
             for (Product product : products) {
                 // Отправить сообщение с текстовыми данными о товаре
                 String message = "Название: " + product.getName() + "\nЦена: " + product.getPrice();
-                String category = "Категория: " + product.getCategory().getValue() + "\nПодгатегория: " + product.getSubcategory().getValue();
+                String category = "Категория: " + product.getCategory().getValue() + "\nПодкатегория: " + product.getSubcategory().getValue();
                 sendMessage(chatId, message);
                 sendMessage(chatId, category);
                 // Отправить изображение товара
                 InlineKeyboardMarkup keyboardMarkup = createDeleteKeyboard(product.getId());
                 sendProductImageWithKeyboard(chatId, product.getImageUrl(), keyboardMarkup);
-
             }
         }
     }
