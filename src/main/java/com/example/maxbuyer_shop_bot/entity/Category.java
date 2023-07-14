@@ -4,6 +4,10 @@ public enum Category {
     BRUSHORTS_SKIRTS("Брюки/шорты/юбки"),
     DRESSES("Платья"),
     SHIRTS_TOPS("Рубашки/топы"),
+    TECH_GADGET("Техника/гаджет"),
+    CAPS("Кепки"),
+    SHOES("Обувь"),
+    UNDERWEAR("Нижнее белье"),
     OUTERWEAR("Верхняя одежда");
 
     private String value;
