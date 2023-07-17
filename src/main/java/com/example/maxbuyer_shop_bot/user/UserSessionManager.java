@@ -2,6 +2,7 @@ package com.example.maxbuyer_shop_bot.user;
 
 import com.example.maxbuyer_shop_bot.admin.AdminSessionManager;
 import com.example.maxbuyer_shop_bot.entity.Category;
+import com.example.maxbuyer_shop_bot.entity.Country;
 import com.example.maxbuyer_shop_bot.entity.Subcategory;
 import lombok.Data;
 import lombok.Getter;
@@ -19,6 +20,8 @@ public class UserSessionManager {
 
     private Subcategory subcategory;
 
+    private String country;
+
 
     public UserSessionManager() {
         reset();
@@ -28,6 +31,7 @@ public class UserSessionManager {
         currentStep = UserSessionManager.Step.NONE;
 
         productCategory = null;
+        country = null;
         subcategory = null;// Set the category to null
 
     }

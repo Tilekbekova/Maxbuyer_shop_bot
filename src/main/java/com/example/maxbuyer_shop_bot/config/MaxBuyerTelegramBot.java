@@ -80,148 +80,165 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage()) {
             Message message = update.getMessage();
-            long chatId1 = message.getChatId();
+            long chatId = message.getChatId();
             if (message.hasText()) {
-
-
                 String messageText = message.getText();
-                long chatId = message.getChatId();
-
-                if (messageText.equalsIgnoreCase("/start")) {
-                    if (isAdmin(String.valueOf(chatId))) {
-                        sendAdminStartMessage(String.valueOf(chatId));
-                    } else {
-                        sendStartMessage(chatId);
-                        updateDB(chatId, message.getFrom().getUserName());
-
-                    }
-                } else if (messageText.equalsIgnoreCase("/menu")) {
-                    sendMessage(String.valueOf(chatId), getMainMenu());
-                } else if (messageText.equalsIgnoreCase("Часто задаваемые вопросы")) {
-                    sendFAQ(String.valueOf(chatId));
-                } else if (messageText.equalsIgnoreCase("Доставка")) {
-                    sendMessage(String.valueOf(chatId), DELIVERY);
-                } else if (messageText.equalsIgnoreCase("в чем плюсы заказывать одежду/гаджет из Кореи?")) {
-                    sendMessage(String.valueOf(chatId), FIRST_QUESTION);
-                    createBack(String.valueOf(chatId));
-                } else if (messageText.equalsIgnoreCase("как заказать?")) {
-                    sendMessage(String.valueOf(chatId), SECOND_QUESTION);
-                    createBack(String.valueOf(chatId));
-                } else if (messageText.equalsIgnoreCase("Корзина")) {
-                    sendProductsInCart(String.valueOf(chatId));
-                    createBack(String.valueOf(chatId));
-                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Все продукты")) {
-                    sendProducts(String.valueOf(chatId));
-
-
-                } else if (messageText.equalsIgnoreCase("Каталог")) {
-                    List<String> categoryValues = getCategoryValues();
-                    ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
-                    sendMessage1(String.valueOf(chatId), "Выберите категорию товара:", categoryKeyboardMarkup);
-                    createBack(String.valueOf(chatId));
-                    userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_PRODUCT_CATEGORY);
-                } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_PRODUCT_CATEGORY) {
-                    Category category = Category.fromValue(messageText);
-                    userSessionManager.setProductCategory(category);
-                    List<String> subcategoryValues = getSubcategoryValues();
-                    ReplyKeyboardMarkup subcategoryKeyboardMarkup = createKeyboardMarkup(subcategoryValues);
-                    sendMessage1(String.valueOf(chatId), "Выберите подкатегорию товара:", subcategoryKeyboardMarkup);
-                    userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_PRODUCT_SUBCATEGORY);
-                } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_PRODUCT_SUBCATEGORY) {
-                    Subcategory subcategory = Subcategory.fromValue(messageText);
-                    userSessionManager.setSubcategory(subcategory);
-                    sendProductsByCategoryAndSubcategory(String.valueOf(chatId), userSessionManager.getProductCategory(), userSessionManager.getSubcategory());
-                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Добавить товар")) {
-                    sendMessage(String.valueOf(chatId), "Введите имя товара:");
-                    adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_NAME);
+                if (isAdmin(String.valueOf(chatId))) {
+                    onAdminUpdateReceived(chatId, messageText, update);
                 } else {
-                    handleAdminConversation(String.valueOf(chatId), update);
+                    onUserUpdateReceived(chatId, messageText, message);
                 }
             } else if (message.hasPhoto()) {
-                handleProductImage(String.valueOf(chatId1), message);
+                handleProductImage(String.valueOf(chatId), message);
             } else {
-                sendMessage(String.valueOf(chatId1), "Извините, не могу распознать ваш запрос. Пожалуйста, повторите.");
+                sendMessage(String.valueOf(chatId), "Извините, не могу распознать ваш запрос. Пожалуйста, повторите.");
             }
         } else if (update.hasCallbackQuery()) {
-
             CallbackQuery callbackQuery = update.getCallbackQuery();
             String callbackData = callbackQuery.getData();
             long chatId = callbackQuery.getMessage().getChatId();
-
-            if (callbackData.equalsIgnoreCase("Start")) {
-                sendMainMenuMessage(String.valueOf(chatId));
-            } else if (callbackData.equalsIgnoreCase("Back")) {
-                sendMainMenuMessage(String.valueOf(chatId));
-            } else if (callbackData.startsWith("addToCart_")) {
-                String productIdString = callbackData.substring(10);
-                long productId = Long.parseLong(productIdString);
-
-                Product productToAdd = productRepository.findById(productId).orElse(null);
-                User user = userRepository.findById(chatId).orElseGet(User::new);
-
-                if (userProductRepository.findByUserAndProduct(user, productToAdd).isEmpty()) {
-                    Product_User product_user = new Product_User();
-                    product_user.setProduct(productToAdd);
-                    product_user.setUser(user);
-                    userProductRepository.save(product_user);
-                    sendMessage(String.valueOf(chatId), "Товар \"" + productToAdd.getName() + "\" добавлен в корзину.");
-                } else {
-                    sendMessage(String.valueOf(chatId), "Товар уже добавлен в корзину!");
-                }
-
-            } else if (callbackData.startsWith("add_to_order")) {
-                User user = userRepository.findById(chatId).orElseGet(User::new);
-                userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_USER_COUNTRY);
-                List<String> countryValues = getCountryValues();
-                ReplyKeyboardMarkup countryKeyboardMarkup = createKeyboardMarkup(countryValues);
-                sendMessage1(String.valueOf(chatId), "Из какой вы страны?", countryKeyboardMarkup);
-            } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_USER_COUNTRY && update.hasMessage() && update.getMessage().hasText()) {
-                User user = userRepository.findById(chatId).orElseGet(User::new);
-                String userCountry = update.getMessage().getText();
-                user.setCountry(Country.valueOf(userCountry));
-                userRepository.save(user);
-                // Perform any necessary actions with the user's country selection
-                // You can also update the user's session step if needed
-            } else if (isAdmin(String.valueOf(chatId)) && callbackData.startsWith("Delete")) {
-                String productIdString = callbackData.substring(6);
-
-                try {
-                    long productId = Long.parseLong(productIdString);
-                    Product productToDelete = productRepository.findById(productId).orElse(null);
-
-                    if (productToDelete == null) {
-                        sendMessage(String.valueOf(chatId), "Нет такого товара!");
-                    } else {
-                        List<Product_User> productUsers = userProductRepository.findByProduct(productToDelete);
-                        userProductRepository.deleteAll(productUsers);
-
-                        productRepository.delete(productToDelete);
-                        sendMessage(String.valueOf(chatId), "Товар \"" + productToDelete.getName() + "\" удален.");
-                    }
-                } catch (NumberFormatException e) {
-                    sendMessage(String.valueOf(chatId), "Неверный формат идентификатора товара.");
-                }
-
-            } else if (callbackData.startsWith("delete_cart")) {
-
-                String productIdString = callbackData.substring(11);
-                System.out.println(Long.parseLong(productIdString));
-                long productId = Long.parseLong(productIdString);
-
-
-                Product productToAdd = productRepository.findById(productId).orElse(null);
-                User user = userRepository.findById(chatId).orElseGet(User::new);
-
-                if (!userProductRepository.findByUserAndProduct(user, productToAdd).isEmpty()) {
-
-                    userProductRepository.delete(userProductRepository.findByUserAndProduct1(user, productToAdd));
-                    sendMessage(String.valueOf(chatId), "Товар " + productToAdd.getName() + "\\\" удален из корзины!");
-                }
-
-
+            if (isAdmin(String.valueOf(chatId))) {
+                onAdminCallbackQueryReceived(chatId, callbackData, callbackQuery);
+            } else {
+                onUserCallbackQueryReceived(chatId, callbackData, callbackQuery);
             }
         }
     }
+
+    private void onUserUpdateReceived(long chatId, String messageText, Message message) {
+        if (messageText.equalsIgnoreCase("/start")) {
+            sendStartMessage(chatId);
+            updateDB(chatId, message.getFrom().getUserName());
+        } else if (messageText.equalsIgnoreCase("/menu")) {
+            sendMessage(String.valueOf(chatId), getMainMenu());
+        } else if (messageText.equalsIgnoreCase("Часто задаваемые вопросы")) {
+            sendFAQ(String.valueOf(chatId));
+        } else if (messageText.equalsIgnoreCase("Доставка")) {
+            sendMessage(String.valueOf(chatId), DELIVERY);
+        } else if (messageText.equalsIgnoreCase("в чем плюсы заказывать одежду/гаджет из Кореи?")) {
+            sendMessage(String.valueOf(chatId), FIRST_QUESTION);
+            createBack(String.valueOf(chatId));
+        } else if (messageText.equalsIgnoreCase("как заказать?")) {
+            sendMessage(String.valueOf(chatId), SECOND_QUESTION);
+            createBack(String.valueOf(chatId));
+        } else if (messageText.equalsIgnoreCase("Корзина")) {
+            sendProductsInCart(String.valueOf(chatId));
+            createBack(String.valueOf(chatId));
+        } else if (messageText.equalsIgnoreCase("Каталог")) {
+            List<String> categoryValues = getCategoryValues();
+            ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
+            sendMessage1(String.valueOf(chatId), "Выберите категорию товара:", categoryKeyboardMarkup);
+            createBack(String.valueOf(chatId));
+            userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_PRODUCT_CATEGORY);
+        } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_PRODUCT_CATEGORY) {
+            Category category = Category.fromValue(messageText);
+            userSessionManager.setProductCategory(category);
+            List<String> subcategoryValues = getSubcategoryValues();
+            ReplyKeyboardMarkup subcategoryKeyboardMarkup = createKeyboardMarkup(subcategoryValues);
+            sendMessage1(String.valueOf(chatId), "Выберите подкатегорию товара:", subcategoryKeyboardMarkup);
+            userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_PRODUCT_SUBCATEGORY);
+        } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_PRODUCT_SUBCATEGORY) {
+            Subcategory subcategory = Subcategory.fromValue(messageText);
+            userSessionManager.setSubcategory(subcategory);
+            sendProductsByCategoryAndSubcategory(String.valueOf(chatId), userSessionManager.getProductCategory(), userSessionManager.getSubcategory());
+        } else {
+            sendMessage(String.valueOf(chatId), "Извините, не могу распознать ваш запрос. Пожалуйста, повторите.");
+        }
+    }
+
+    private void onAdminUpdateReceived(long chatId, String messageText, Update update) {
+        if (messageText.equalsIgnoreCase("/start")) {
+            sendAdminStartMessage(String.valueOf(chatId));
+        } else if (messageText.equalsIgnoreCase("/menu")) {
+            sendMessage(String.valueOf(chatId), getMainMenu());
+        } else if (messageText.equalsIgnoreCase("Все продукты")) {
+            sendProducts(String.valueOf(chatId));
+        } else if (messageText.equalsIgnoreCase("Добавить товар")) {
+            sendMessage(String.valueOf(chatId), "Введите имя товара:");
+            adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_NAME);
+        } else {
+            handleAdminConversation(String.valueOf(chatId),update);
+        }
+    }
+
+    private void onUserCallbackQueryReceived(long chatId, String callbackData, CallbackQuery callbackQuery) {
+        if (callbackData.equalsIgnoreCase("Start") || callbackData.equalsIgnoreCase("Back")) {
+            sendMainMenuMessage(String.valueOf(chatId));
+        } else if (callbackData.startsWith("addToCart_")) {
+            String productIdString = callbackData.substring(10);
+            long productId = Long.parseLong(productIdString);
+
+            Product productToAdd = productRepository.findById(productId).orElse(null);
+            User user = userRepository.findById(chatId).orElseGet(User::new);
+
+            if (userProductRepository.findByUserAndProduct(user, productToAdd).isEmpty()) {
+                Product_User product_user = new Product_User();
+                product_user.setProduct(productToAdd);
+                product_user.setUser(user);
+                userProductRepository.save(product_user);
+                sendMessage(String.valueOf(chatId), "Товар \"" + productToAdd.getName() + "\" добавлен в корзину.");
+            } else {
+                sendMessage(String.valueOf(chatId), "Товар уже добавлен в корзину!");
+            }
+
+        } else if (callbackData.startsWith("add_to_order")) {
+            User user = userRepository.findById(chatId).orElseGet(User::new);
+
+            List<Product_User> productUsers = userProductRepository.findByUser(user);
+            if (productUsers.isEmpty()) {
+                sendMessage(String.valueOf(chatId), "Корзина пуста.");
+            } else {
+                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, callbackQuery.getFrom().getUserName());
+
+            }
+
+        } else if (callbackData.startsWith("delete_cart")) {
+
+            String productIdString = callbackData.substring(11);
+            System.out.println(Long.parseLong(productIdString));
+            long productId = Long.parseLong(productIdString);
+
+
+            Product productToAdd = productRepository.findById(productId).orElse(null);
+            User user = userRepository.findById(chatId).orElseGet(User::new);
+
+            if (!userProductRepository.findByUserAndProduct(user, productToAdd).isEmpty()) {
+
+                userProductRepository.delete(userProductRepository.findByUserAndProduct1(user, productToAdd));
+                sendMessage(String.valueOf(chatId), "Товар " + productToAdd.getName() + "\\\" удален из корзины!");
+            }
+        } else {
+            sendMessage(String.valueOf(chatId), "Извините, не могу распознать ваш запрос. Пожалуйста, повторите.");
+        }
+    }
+
+    private void onAdminCallbackQueryReceived(long chatId, String callbackData, CallbackQuery callbackQuery) {
+        if (callbackData.equalsIgnoreCase("Start") || callbackData.equalsIgnoreCase("Back")) {
+            sendMainMenuMessage(String.valueOf(chatId));
+        } else if (isAdmin(String.valueOf(chatId)) && callbackData.startsWith("Delete")) {
+            String productIdString = callbackData.substring(6);
+
+            try {
+                long productId = Long.parseLong(productIdString);
+                Product productToDelete = productRepository.findById(productId).orElse(null);
+
+                if (productToDelete == null) {
+                    sendMessage(String.valueOf(chatId), "Нет такого товара!");
+                } else {
+                    List<Product_User> productUsers = userProductRepository.findByProduct(productToDelete);
+                    userProductRepository.deleteAll(productUsers);
+
+                    productRepository.delete(productToDelete);
+                    sendMessage(String.valueOf(chatId), "Товар \"" + productToDelete.getName() + "\" удален.");
+                }
+            } catch (NumberFormatException e) {
+                sendMessage(String.valueOf(chatId), "Неверный формат идентификатора товара.");
+            }
+        } else {
+            sendMessage(String.valueOf(chatId), "Извините, не могу распознать ваш запрос. Пожалуйста, повторите.");
+        }
+    }
+
 
 
     private void updateDB(long userId, String userName) {
@@ -235,17 +252,19 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
     }
 
-    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName, Country selectedCountry) {
+    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName) {
         // Отправка выбранных продуктов администратору
         StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n");
-        message.append("Страна: ").append(selectedCountry.getDisplayName()).append("\n\n");
 
 
         for (Product_User productUser : productUsers) {
             Product product = productUser.getProduct();
+            User user = productUser.getUser();
             message.append("Название: ").append(product.getName()).append("\n");
             message.append("Цена: ").append(product.getPrice()).append("\n\n");
+
         }
+
 
         SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, message.toString());
 
