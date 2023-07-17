@@ -113,9 +113,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Все продукты")) {
                     sendProducts(String.valueOf(chatId));
 
-                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Добавить товар")) {
-                    sendMessage(String.valueOf(chatId), "Введите имя товара:");
-                    adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_NAME);
+
                 } else if (messageText.equalsIgnoreCase("Каталог")) {
                     List<String> categoryValues = getCategoryValues();
                     ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
@@ -133,7 +131,9 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                     Subcategory subcategory = Subcategory.fromValue(messageText);
                     userSessionManager.setSubcategory(subcategory);
                     sendProductsByCategoryAndSubcategory(String.valueOf(chatId), userSessionManager.getProductCategory(), userSessionManager.getSubcategory());
-
+                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Добавить товар")) {
+                    sendMessage(String.valueOf(chatId), "Введите имя товара:");
+                    adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_NAME);
                 } else {
                     handleAdminConversation(String.valueOf(chatId), update);
                 }
