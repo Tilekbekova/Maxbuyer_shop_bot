@@ -16,6 +16,8 @@ public class User {
     private Long id;
 
     private String username;
+    @Enumerated(EnumType.STRING)
+    private Country country;
 
 
 

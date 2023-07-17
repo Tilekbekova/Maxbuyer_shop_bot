@@ -172,15 +172,16 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             } else if (callbackData.startsWith("add_to_order")) {
                 User user = userRepository.findById(chatId).orElseGet(User::new);
 
-                List<Product_User> productUsers = userProductRepository.findByUser(user);
-                if (productUsers.isEmpty()) {
-                    sendMessage(String.valueOf(chatId), "Корзина пуста.");
-                } else {
-                    sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, callbackQuery.getFrom().getUserName());
+                List<String> countryValues = getCountryValues();
+                ReplyKeyboardMarkup countryKeyboardMarkup = createKeyboardMarkup(countryValues);
+                sendMessage1(String.valueOf(chatId), "Из какой вы страны?", countryKeyboardMarkup);
+                user.setCountry(Country.valueOf(update.getMessage().getText())); // Assuming the user's country is in the message text
+                userRepository.save(user);
+            }
 
-                }
 
-            } else if (isAdmin(String.valueOf(chatId)) && callbackData.startsWith("Delete")) {
+
+             else if (isAdmin(String.valueOf(chatId)) && callbackData.startsWith("Delete")) {
                 String productIdString = callbackData.substring(6);
 
                 try {
@@ -233,9 +234,11 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
     }
 
-    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName) {
+    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName, Country selectedCountry) {
         // Отправка выбранных продуктов администратору
         StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n");
+        message.append("Страна: ").append(selectedCountry.getDisplayName()).append("\n\n");
+
 
         for (Product_User productUser : productUsers) {
             Product product = productUser.getProduct();
@@ -536,11 +539,11 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
     }
 
     private List<String> getCountryValues() {
-        List<String> categoryValues = new ArrayList<>();
-        for (Country category : Country.values()) {
-            categoryValues.add(category.getValue());
+        List<String> countryValues = new ArrayList<>();
+        for (Country country : Country.values()) {
+            countryValues.add(country.getDisplayName());
         }
-        return categoryValues;
+        return countryValues;
     }
 
 
