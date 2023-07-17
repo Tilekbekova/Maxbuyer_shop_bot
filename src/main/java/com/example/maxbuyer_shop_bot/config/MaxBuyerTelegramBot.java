@@ -58,6 +58,10 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             " Удобно выгодно прозрачно√ 2. Если вы не отпределились с выбором: \n" +
             "1) вы так же можете обратиться ко мне, если не знаете наверняка чего хотите. я полностью вас проконсультирую и помогу определиться с выбором 2) подберу ваши размеры одежда/обувь, найду для вас любую технику/гаджет \n" +
             "3) проведу вас онлайн -> от выбора, до покупки и отправки в ваш город. На связи 24/7√";
+
+    private static final String DELIVERY = "Я использую ЕМС доставку - это один из самых надежных и быстрых способов отправить посылку в страны СНГ. \n" +
+            "\n" +
+            "Сроки доставки от 4-14 дней (зависимости от страны)";
     private final AdminProductService adminProductService;
 
 
@@ -90,12 +94,13 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                         sendStartMessage(chatId);
                         updateDB(chatId, message.getFrom().getUserName());
 
-
                     }
                 } else if (messageText.equalsIgnoreCase("/menu")) {
                     sendMessage(String.valueOf(chatId), getMainMenu());
                 } else if (messageText.equalsIgnoreCase("Часто задаваемые вопросы")) {
                     sendFAQ(String.valueOf(chatId));
+                } else if (messageText.equalsIgnoreCase("Доставка")) {
+                    sendMessage(String.valueOf(chatId), DELIVERY);
                 } else if (messageText.equalsIgnoreCase("в чем плюсы заказывать одежду/гаджет из Кореи?")) {
                     sendMessage(String.valueOf(chatId), FIRST_QUESTION);
                     createBack(String.valueOf(chatId));
@@ -105,10 +110,17 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 } else if (messageText.equalsIgnoreCase("Корзина")) {
                     sendProductsInCart(String.valueOf(chatId));
                     createBack(String.valueOf(chatId));
+                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Все продукты")) {
+                    sendProducts(String.valueOf(chatId));
+
+                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Добавить товар")) {
+                    sendMessage(String.valueOf(chatId), "Введите имя товара:");
+                    adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_NAME);
                 } else if (messageText.equalsIgnoreCase("Каталог")) {
                     List<String> categoryValues = getCategoryValues();
                     ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
                     sendMessage1(String.valueOf(chatId), "Выберите категорию товара:", categoryKeyboardMarkup);
+                    createBack(String.valueOf(chatId));
                     userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_PRODUCT_CATEGORY);
                 } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_PRODUCT_CATEGORY) {
                     Category category = Category.fromValue(messageText);
@@ -122,13 +134,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                     userSessionManager.setSubcategory(subcategory);
                     sendProductsByCategoryAndSubcategory(String.valueOf(chatId), userSessionManager.getProductCategory(), userSessionManager.getSubcategory());
 
-                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Все продукты")) {
-                    sendProducts(String.valueOf(chatId));
-
-
-                } else if (isAdmin(String.valueOf(chatId)) && messageText.equalsIgnoreCase("Добавить товар")) {
-                    sendMessage(String.valueOf(chatId), "Введите имя товара:");
-                    adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_NAME);
                 } else {
                     handleAdminConversation(String.valueOf(chatId), update);
                 }
@@ -145,8 +150,8 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
             if (callbackData.equalsIgnoreCase("Start")) {
                 sendMainMenuMessage(String.valueOf(chatId));
-            }else  if (callbackData.equalsIgnoreCase("Back")) {
-                    sendMainMenuMessage(String.valueOf(chatId));
+            } else if (callbackData.equalsIgnoreCase("Back")) {
+                sendMainMenuMessage(String.valueOf(chatId));
             } else if (callbackData.startsWith("addToCart_")) {
                 String productIdString = callbackData.substring(10);
                 long productId = Long.parseLong(productIdString);
@@ -363,8 +368,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
     }
 
 
-
-
     private String processImage(String imageUrl) {
         try {
             URL url = new URL(imageUrl);
@@ -532,6 +535,14 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         return categoryValues;
     }
 
+    private List<String> getCountryValues() {
+        List<String> categoryValues = new ArrayList<>();
+        for (Country category : Country.values()) {
+            categoryValues.add(category.getValue());
+        }
+        return categoryValues;
+    }
+
 
     private List<String> getSubcategoryValues() {
         List<String> subcategoryValues = new ArrayList<>();
@@ -563,18 +574,20 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         KeyboardRow row1 = new KeyboardRow();
-        row1.add("Каталог");
-
         KeyboardRow row2 = new KeyboardRow();
+        KeyboardRow row3 = new KeyboardRow();
+        KeyboardRow row4 = new KeyboardRow();
+        row1.add("Каталог");
         row2.add("Корзина");
 
-        KeyboardRow row3 = new KeyboardRow();
-        row2.add("Часто задаваемые вопросы");
 
+        row3.add("Часто задаваемые вопросы");
+        row4.add("Доставка");
 
         keyboard.add(row1);
         keyboard.add(row2);
         keyboard.add(row3);
+        keyboard.add(row4);
 
 
         keyboardMarkup.setKeyboard(keyboard);
@@ -585,6 +598,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+
 
     }
 
