@@ -171,17 +171,18 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
             } else if (callbackData.startsWith("add_to_order")) {
                 User user = userRepository.findById(chatId).orElseGet(User::new);
-
+                userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_USER_COUNTRY);
                 List<String> countryValues = getCountryValues();
                 ReplyKeyboardMarkup countryKeyboardMarkup = createKeyboardMarkup(countryValues);
                 sendMessage1(String.valueOf(chatId), "Из какой вы страны?", countryKeyboardMarkup);
-                user.setCountry(Country.valueOf(update.getMessage().getText())); // Assuming the user's country is in the message text
+            } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_USER_COUNTRY && update.hasMessage() && update.getMessage().hasText()) {
+                User user = userRepository.findById(chatId).orElseGet(User::new);
+                String userCountry = update.getMessage().getText();
+                user.setCountry(Country.valueOf(userCountry));
                 userRepository.save(user);
-            }
-
-
-
-             else if (isAdmin(String.valueOf(chatId)) && callbackData.startsWith("Delete")) {
+                // Perform any necessary actions with the user's country selection
+                // You can also update the user's session step if needed
+            } else if (isAdmin(String.valueOf(chatId)) && callbackData.startsWith("Delete")) {
                 String productIdString = callbackData.substring(6);
 
                 try {

@@ -36,7 +36,8 @@ public class UserSessionManager {
         NONE,
 
         ENTER_PRODUCT_CATEGORY,
-        ENTER_PRODUCT_SUBCATEGORY,// Add the category step
+        ENTER_PRODUCT_SUBCATEGORY,
+        ENTER_USER_COUNTRY// Add the category step
 
         // Add more steps for collecting other product details
     }
