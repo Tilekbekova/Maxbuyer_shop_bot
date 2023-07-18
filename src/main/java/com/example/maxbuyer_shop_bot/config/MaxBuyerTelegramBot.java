@@ -19,6 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -122,8 +123,9 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             sendMessage(String.valueOf(chatId), SECOND_QUESTION);
             createBack(String.valueOf(chatId));
         } else if (messageText.equalsIgnoreCase("Корзина")) {
-            sendProductsInCart(String.valueOf(chatId));
+
             createBack(String.valueOf(chatId));
+            sendProductsInCart(String.valueOf(chatId));
         } else if (messageText.equalsIgnoreCase("Каталог")) {
             List<String> categoryValues = getCategoryValues();
             ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
@@ -141,7 +143,24 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             Subcategory subcategory = Subcategory.fromValue(messageText);
             userSessionManager.setSubcategory(subcategory);
             sendProductsByCategoryAndSubcategory(String.valueOf(chatId), userSessionManager.getProductCategory(), userSessionManager.getSubcategory());
-        } else {
+        }else if (messageText.equalsIgnoreCase("Оформить заказ")) {
+            Country country = Country.valueOf(messageText);
+            userSessionManager.setCountry(country);
+            List<String> countryValues = getCountryValues();
+            ReplyKeyboardMarkup c = createKeyboardMarkup(countryValues);
+            sendMessage1(String.valueOf(chatId), "Из какой вы страны?", c);
+            userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_USER_COUNTRY);
+        }else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_USER_COUNTRY) {
+            User user = userRepository.findById(chatId).orElseGet(User::new);
+
+            List<Product_User> productUsers = userProductRepository.findByUser(user);
+            if (productUsers.isEmpty()) {
+                sendMessage(String.valueOf(chatId), "Корзина пуста.");
+            } else {
+                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, userSessionManager.getCountry().getDisplayName());
+
+            }
+        }else {
             sendMessage(String.valueOf(chatId), "Извините, не могу распознать ваш запрос. Пожалуйста, повторите.");
         }
     }
@@ -181,16 +200,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 sendMessage(String.valueOf(chatId), "Товар уже добавлен в корзину!");
             }
 
-        } else if (callbackData.startsWith("add_to_order")) {
-            User user = userRepository.findById(chatId).orElseGet(User::new);
-
-            List<Product_User> productUsers = userProductRepository.findByUser(user);
-            if (productUsers.isEmpty()) {
-                sendMessage(String.valueOf(chatId), "Корзина пуста.");
-            } else {
-                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, callbackQuery.getFrom().getUserName());
-
-            }
 
         } else if (callbackData.startsWith("delete_cart")) {
 
@@ -717,7 +726,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 sendProductImageWithKeyboard(chatId, product.getImageUrl(), keyboardMarkup);
             }
             SendMessage message = new SendMessage(chatId, "Нажмите для того чтобы оформить заказ!");
-            InlineKeyboardMarkup keyboardMarkup = createAddToOrderKeyboard();
+            ReplyKeyboardMarkup keyboardMarkup = createAddToOrderKeyboard();
             message.setReplyMarkup(keyboardMarkup);
 
             try {
@@ -764,17 +773,33 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         return keyboardMarkup;
     }
 
-    private InlineKeyboardMarkup createAddToOrderKeyboard() {
-        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
-        InlineKeyboardButton addToOrderButton = new InlineKeyboardButton("Оформить заказ");
-        addToOrderButton.setCallbackData("add_to_order");
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        List<InlineKeyboardButton> row = new ArrayList<>();
-        row.add(addToOrderButton);
+    private ReplyKeyboardMarkup createAddToOrderKeyboard() {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        keyboardMarkup.setOneTimeKeyboard(true); // Optional: Set to 'false' if you want the keyboard to be persistent.
+
+        // Create a list to hold keyboard rows.
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Create a new keyboard row.
+        KeyboardRow row = new KeyboardRow();
+
+        // Create the button text (you can customize this).
+        String buttonText = "Оформить заказ";
+
+        // Create the button and add it to the row.
+        KeyboardButton button = new KeyboardButton(buttonText);
+        row.add(button);
+
+        // Add the row to the keyboard.
         keyboard.add(row);
+
+        // Set the keyboard to the markup.
         keyboardMarkup.setKeyboard(keyboard);
+
         return keyboardMarkup;
     }
+
 
     private InlineKeyboardMarkup createDeleteKeyboard(Long productId) {
         InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();

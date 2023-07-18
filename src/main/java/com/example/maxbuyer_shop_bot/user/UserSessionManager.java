@@ -20,7 +20,7 @@ public class UserSessionManager {
 
     private Subcategory subcategory;
 
-    private String country;
+    private Country country;
 
 
     public UserSessionManager() {
