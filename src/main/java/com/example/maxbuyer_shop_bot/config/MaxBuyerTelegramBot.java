@@ -130,13 +130,13 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_USER_COUNTRY);
         } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_USER_COUNTRY) {
             User user = userRepository.findById(chatId).orElseGet(User::new);
-            Country country = Country.valueOf(messageText);
+            Country country = Country.fromValue(messageText);
             userSessionManager.setCountry(country);
             List<Product_User> productUsers = userProductRepository.findByUser(user);
             if (productUsers.isEmpty()) {
                 sendMessage(String.valueOf(chatId), "Корзина пуста.");
             } else {
-                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, userSessionManager.getCountry().getDisplayName());
+                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, message.getFrom().getUserName(),userSessionManager.getCountry());
 
             }
             userSessionManager.reset();
@@ -262,9 +262,10 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
     }
 
-    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName) {
+    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName, Country country) {
         // Отправка выбранных продуктов администратору
         StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n");
+        message.append("Страна: ").append(country).append("\n\n");
 
 
         for (Product_User productUser : productUsers) {

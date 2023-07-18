@@ -18,4 +18,13 @@ public enum Country {
     public String getDisplayName() {
         return displayName;
     }
+
+    public static Country fromValue(String value) {
+        for (Country category : Country.values()) {
+            if (category.getDisplayName().equalsIgnoreCase(value)) {
+                return category;
+            }
+        }
+        throw new IllegalArgumentException("Invalid Category value: " + value);
+    }
 }
