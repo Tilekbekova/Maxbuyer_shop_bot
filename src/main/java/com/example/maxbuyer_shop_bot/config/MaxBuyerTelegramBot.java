@@ -122,6 +122,24 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         } else if (messageText.equalsIgnoreCase("как заказать?")) {
             sendMessage(String.valueOf(chatId), SECOND_QUESTION);
             createBack(String.valueOf(chatId));
+        } else if (messageText.equalsIgnoreCase("Оформить заказ")) {
+                Country country = Country.valueOf(messageText);
+                userSessionManager.setCountry(country);
+                List<String> countryValues = getCountryValues();
+                ReplyKeyboardMarkup c = createKeyboardMarkup(countryValues);
+                sendMessage1(String.valueOf(chatId), "Из какой вы страны?", c);
+                userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_USER_COUNTRY);
+            }else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_USER_COUNTRY) {
+                User user = userRepository.findById(chatId).orElseGet(User::new);
+
+                List<Product_User> productUsers = userProductRepository.findByUser(user);
+                if (productUsers.isEmpty()) {
+                    sendMessage(String.valueOf(chatId), "Корзина пуста.");
+                } else {
+                    sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, userSessionManager.getCountry().getDisplayName());
+
+                }
+                userSessionManager.reset();
         } else if (messageText.equalsIgnoreCase("Корзина")) {
 
             createBack(String.valueOf(chatId));
@@ -143,23 +161,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             Subcategory subcategory = Subcategory.fromValue(messageText);
             userSessionManager.setSubcategory(subcategory);
             sendProductsByCategoryAndSubcategory(String.valueOf(chatId), userSessionManager.getProductCategory(), userSessionManager.getSubcategory());
-        }else if (messageText.equalsIgnoreCase("Оформить заказ")) {
-            Country country = Country.valueOf(messageText);
-            userSessionManager.setCountry(country);
-            List<String> countryValues = getCountryValues();
-            ReplyKeyboardMarkup c = createKeyboardMarkup(countryValues);
-            sendMessage1(String.valueOf(chatId), "Из какой вы страны?", c);
-            userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_USER_COUNTRY);
-        }else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_USER_COUNTRY) {
-            User user = userRepository.findById(chatId).orElseGet(User::new);
 
-            List<Product_User> productUsers = userProductRepository.findByUser(user);
-            if (productUsers.isEmpty()) {
-                sendMessage(String.valueOf(chatId), "Корзина пуста.");
-            } else {
-                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, userSessionManager.getCountry().getDisplayName());
-
-            }
         }else {
             sendMessage(String.valueOf(chatId), "Извините, не могу распознать ваш запрос. Пожалуйста, повторите.");
         }
