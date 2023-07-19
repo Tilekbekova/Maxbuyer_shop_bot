@@ -324,10 +324,11 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             privateChatUrl = "https://t.me/" + userName;
         } else {
             privateChatUrl = "https://t.me/" + chatId;
-            goToPrivateChatButton.setText("Перейти в приватный чат по chatId");
         }
 
+        String privateChatUri = "tg://user?id=" + chatId;
         goToPrivateChatButton.setUrl(privateChatUrl);
+        goToPrivateChatButton.setCallbackData(privateChatUri);
 
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
@@ -338,6 +339,8 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
         return keyboardMarkup;
     }
+
+
 
     private InlineKeyboardMarkup createBack(String chatId) {
         InlineKeyboardMarkup backButtonKeyboard = new InlineKeyboardMarkup();
