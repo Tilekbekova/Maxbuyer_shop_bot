@@ -136,7 +136,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             if (productUsers.isEmpty()) {
                 sendMessage(String.valueOf(chatId), "Корзина пуста.");
             } else {
-                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, message.getFrom().getUserName(),userSessionManager.getCountry());
+                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, message.getFrom().getUserName(), userSessionManager.getCountry());
 
             }
             userSessionManager.reset();
@@ -145,10 +145,10 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             createBack(String.valueOf(chatId));
             sendProductsInCart(String.valueOf(chatId));
 
-        }  else if (messageText.equalsIgnoreCase("Другое")) {
-            sendSelectedToAdmin(String.valueOf(chatId),message.getFrom().getUserName());
-                createBack(String.valueOf(chatId));
-                sendProductsInCart(String.valueOf(chatId));
+        } else if (messageText.equalsIgnoreCase("Другое")) {
+            sendSelectedToAdmin(String.valueOf(chatId), message.getFrom().getUserName());
+            createBack(String.valueOf(chatId));
+
         } else if (messageText.equalsIgnoreCase("Каталог")) {
             List<String> categoryValues = getCategoryValues();
             ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup1(categoryValues);
@@ -298,14 +298,9 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
     private void sendSelectedToAdmin(String chatId, String userName) {
         // Отправка выбранных продуктов администратору
-        StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n" + "Другое");
 
 
-
-
-
-
-        SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, message.toString());
+        SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, "Заказ пользователя " + chatId + ":\n" + "Другое");
 
         // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
         InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
