@@ -144,9 +144,14 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
             createBack(String.valueOf(chatId));
             sendProductsInCart(String.valueOf(chatId));
+
+        }  else if (messageText.equalsIgnoreCase("Другое")) {
+            sendSelectedToAdmin(String.valueOf(chatId),message.getFrom().getUserName());
+                createBack(String.valueOf(chatId));
+                sendProductsInCart(String.valueOf(chatId));
         } else if (messageText.equalsIgnoreCase("Каталог")) {
             List<String> categoryValues = getCategoryValues();
-            ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
+            ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup1(categoryValues);
             sendMessage1(String.valueOf(chatId), "Выберите категорию товара:", categoryKeyboardMarkup);
             createBack(String.valueOf(chatId));
             userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_PRODUCT_CATEGORY);
@@ -291,6 +296,29 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void sendSelectedToAdmin(String chatId, String userName) {
+        // Отправка выбранных продуктов администратору
+        StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n" + "Другое");
+
+
+
+
+
+
+        SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, message.toString());
+
+        // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
+        InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
+        adminMessage.setReplyMarkup(keyboardMarkup);
+        sendMessage(chatId, "C вами свяжутся");
+
+        try {
+            execute(adminMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     private InlineKeyboardMarkup createGoToPrivateChatKeyboard(String chatId, String userName) {
         InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
@@ -300,7 +328,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         if (userName != null && !userName.isEmpty()) {
             privateChatUrl = "https://t.me/" + userName;
         } else {
-            privateChatUrl = "https://t.me/user?id=" + chatId;
+            privateChatUrl = "https://t.me/" + chatId;
             goToPrivateChatButton.setText("Перейти в приватный чат по chatId");
         }
 
@@ -560,6 +588,30 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
         return keyboardMarkup;
     }
+
+    private ReplyKeyboardMarkup createKeyboardMarkup1(List<String> options) {
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        keyboardMarkup.setOneTimeKeyboard(true);
+        List<KeyboardRow> keyboard = new ArrayList<>();
+
+        // Create a row for each option
+        for (String option : options) {
+            KeyboardRow row = new KeyboardRow();
+            row.add(option);
+            keyboard.add(row);
+        }
+
+        // Add a row for "Другое" button
+        KeyboardRow otherRow = new KeyboardRow();
+        otherRow.add("Другое");
+        keyboard.add(otherRow);
+
+        keyboardMarkup.setKeyboard(keyboard);
+
+        return keyboardMarkup;
+    }
+
 
     private List<String> getCategoryValues() {
         List<String> categoryValues = new ArrayList<>();
