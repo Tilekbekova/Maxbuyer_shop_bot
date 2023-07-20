@@ -144,8 +144,23 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 }
                 userSessionManager.reset();
             } else {
-                // If contact information is missing, prompt the user to provide it
-                sendMessage(String.valueOf(chatId), "Пожалуйста, отправьте ваш контакт для оформления заказа.");
+                // If contact information is missing, prompt the user to provide it with a contact button
+                ReplyKeyboardMarkup contactButton = new ReplyKeyboardMarkup();
+                KeyboardButton keyboardButton = new KeyboardButton("Отправить номер");
+                keyboardButton.setRequestContact(true);
+                List<KeyboardRow> keyboardRows = new ArrayList<>();
+                KeyboardRow row = new KeyboardRow();
+                row.add(keyboardButton);
+                keyboardRows.add(row);
+                contactButton.setKeyboard(keyboardRows);
+                contactButton.setResizeKeyboard(true);
+                SendMessage promptMessage = new SendMessage(String.valueOf(chatId), "Пожалуйста, отправьте ваш контакт для оформления заказа.");
+                promptMessage.setReplyMarkup(contactButton);
+                try {
+                    execute(promptMessage);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
             }
         } else if (messageText.equalsIgnoreCase("Корзина")) {
 
