@@ -208,6 +208,19 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             }
 
 
+        } else if (callbackData.equals("REQUEST_PHONE_NUMBER")) {
+            // Send a message requesting the user's phone number
+
+            SendMessage phoneRequestMessage = new SendMessage(String.valueOf(chatId), "Пожалуйста, предоставьте свой номер телефона:");
+
+            // Add additional options if necessary, e.g., a keyboard to provide the phone number.
+            // ...
+
+            try {
+                execute(phoneRequestMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
         } else if (callbackData.startsWith("delete_cart")) {
 
             String productIdString = callbackData.substring(11);
@@ -272,45 +285,22 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n");
         message.append("Страна: ").append(country).append("\n\n");
 
+
         for (Product_User productUser : productUsers) {
             Product product = productUser.getProduct();
             User user = productUser.getUser();
             message.append("Название: ").append(product.getName()).append("\n");
             message.append("Цена: ").append(product.getPrice()).append("\n\n");
+
         }
+
 
         SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, message.toString());
 
-        if (userName != null && !userName.isEmpty()) {
-            // Create a button to allow the admin to contact the user directly
-            InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
-            adminMessage.setReplyMarkup(keyboardMarkup);
-        } else {
-            // If userName is not available, request the user's phone number
-            SendMessage requestPhoneNumberMessage = new SendMessage();
-            requestPhoneNumberMessage.setChatId(chatId);
-            requestPhoneNumberMessage.setText("Пожалуйста, предоставьте ваш номер телефона:");
-
-            ReplyKeyboardMarkup phoneNumberKeyboard = new ReplyKeyboardMarkup();
-            phoneNumberKeyboard.setResizeKeyboard(true);
-            phoneNumberKeyboard.setOneTimeKeyboard(true);
-
-            // Create a button to request the user's phone number
-            List<KeyboardRow> keyboard = new ArrayList<>();
-            KeyboardRow row = new KeyboardRow();
-            KeyboardButton requestPhoneNumberButton = new KeyboardButton("Отправить номер телефона");
-            requestPhoneNumberButton.setRequestContact(true);
-            row.add(requestPhoneNumberButton);
-            keyboard.add(row);
-            phoneNumberKeyboard.setKeyboard(keyboard);
-            requestPhoneNumberMessage.setReplyMarkup(phoneNumberKeyboard);
-
-            try {
-                execute(requestPhoneNumberMessage);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-        }
+        // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
+        InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
+        adminMessage.setReplyMarkup(keyboardMarkup);
+        sendMessage(chatId, "Заказ отправлен с вами свяжутся");
 
         try {
             execute(adminMessage);
@@ -318,7 +308,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
-
 
     private void sendSelectedToAdmin(String chatId, String userName) {
         // Отправка выбранных продуктов администратору
@@ -346,49 +335,11 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         String privateChatUrl;
         if (userName != null && !userName.isEmpty()) {
             privateChatUrl = "https://t.me/" + userName;
+            goToPrivateChatButton.setUrl(privateChatUrl);
         } else {
-            // Если userName отсутствует, запрашиваем у пользователя номер телефона
-            // и отправляем его администратору
-            SendMessage requestPhoneNumberMessage = new SendMessage();
-            requestPhoneNumberMessage.setChatId(chatId);
-            requestPhoneNumberMessage.setText("Пожалуйста, предоставьте ваш номер телефона:");
-
-            ReplyKeyboardMarkup phoneNumberKeyboard = new ReplyKeyboardMarkup();
-            phoneNumberKeyboard.setResizeKeyboard(true);
-            phoneNumberKeyboard.setOneTimeKeyboard(true);
-
-// Создаем список для строки клавиатуры
-            List<KeyboardRow> keyboard = new ArrayList<>();
-            KeyboardRow row = new KeyboardRow();
-
-// Создаем кнопку для запроса номера телефона
-            KeyboardButton requestPhoneNumberButton = new KeyboardButton("Отправить номер телефона");
-            requestPhoneNumberButton.setRequestContact(true);
-
-// Добавляем кнопку в строку
-            row.add(requestPhoneNumberButton);
-
-// Добавляем строку в список клавиатуры
-            keyboard.add(row);
-
-// Устанавливаем клавиатуру для сообщения
-            phoneNumberKeyboard.setKeyboard(keyboard);
-
-            requestPhoneNumberMessage.setReplyMarkup(phoneNumberKeyboard);
-
-            try {
-                execute(requestPhoneNumberMessage);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
-
-            // Возвращаем null, так как пока не можем создать ссылку на ЛС без userName
-            return null;
+            String requestPhoneNumberCallbackData = "REQUEST_PHONE_NUMBER";
+            goToPrivateChatButton.setCallbackData(requestPhoneNumberCallbackData);
         }
-
-        String privateChatUri = "tg://user?id=" + chatId;
-        goToPrivateChatButton.setUrl(privateChatUrl);
-        goToPrivateChatButton.setCallbackData(privateChatUri);
 
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
