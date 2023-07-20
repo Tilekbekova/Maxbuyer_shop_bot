@@ -323,7 +323,43 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         if (userName != null && !userName.isEmpty()) {
             privateChatUrl = "https://t.me/" + userName;
         } else {
-            privateChatUrl = "https://t.me/" + chatId;
+            // Если userName отсутствует, запрашиваем у пользователя номер телефона
+            // и отправляем его администратору
+            SendMessage requestPhoneNumberMessage = new SendMessage();
+            requestPhoneNumberMessage.setChatId(chatId);
+            requestPhoneNumberMessage.setText("Пожалуйста, предоставьте ваш номер телефона:");
+
+            ReplyKeyboardMarkup phoneNumberKeyboard = new ReplyKeyboardMarkup();
+            phoneNumberKeyboard.setResizeKeyboard(true);
+            phoneNumberKeyboard.setOneTimeKeyboard(true);
+
+// Создаем список для строки клавиатуры
+            List<KeyboardRow> keyboard = new ArrayList<>();
+            KeyboardRow row = new KeyboardRow();
+
+// Создаем кнопку для запроса номера телефона
+            KeyboardButton requestPhoneNumberButton = new KeyboardButton("Отправить номер телефона");
+            requestPhoneNumberButton.setRequestContact(true);
+
+// Добавляем кнопку в строку
+            row.add(requestPhoneNumberButton);
+
+// Добавляем строку в список клавиатуры
+            keyboard.add(row);
+
+// Устанавливаем клавиатуру для сообщения
+            phoneNumberKeyboard.setKeyboard(keyboard);
+
+            requestPhoneNumberMessage.setReplyMarkup(phoneNumberKeyboard);
+
+            try {
+                execute(requestPhoneNumberMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+
+            // Возвращаем null, так как пока не можем создать ссылку на ЛС без userName
+            return null;
         }
 
         String privateChatUri = "tg://user?id=" + chatId;
@@ -339,7 +375,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
         return keyboardMarkup;
     }
-
 
 
     private InlineKeyboardMarkup createBack(String chatId) {
