@@ -208,19 +208,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             }
 
 
-        } else if (callbackData.equals("REQUEST_PHONE_NUMBER")) {
-            // Send a message requesting the user's phone number
-
-            SendMessage phoneRequestMessage = new SendMessage(String.valueOf(chatId), "Пожалуйста, предоставьте свой номер телефона:");
-
-            // Add additional options if necessary, e.g., a keyboard to provide the phone number.
-            // ...
-
-            try {
-                execute(phoneRequestMessage);
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
         } else if (callbackData.startsWith("delete_cart")) {
 
             String productIdString = callbackData.substring(11);
@@ -335,11 +322,12 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         String privateChatUrl;
         if (userName != null && !userName.isEmpty()) {
             privateChatUrl = "https://t.me/" + userName;
-            goToPrivateChatButton.setUrl(privateChatUrl);
         } else {
-            String requestPhoneNumberCallbackData = "REQUEST_PHONE_NUMBER";
-            goToPrivateChatButton.setCallbackData(requestPhoneNumberCallbackData);
+            privateChatUrl = "https://t.me/" + chatId;
+            goToPrivateChatButton.setText("Перейти в приватный чат по chatId");
         }
+
+        goToPrivateChatButton.setUrl(privateChatUrl);
 
         List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
         List<InlineKeyboardButton> row = new ArrayList<>();
@@ -350,6 +338,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
         return keyboardMarkup;
     }
+
 
 
     private InlineKeyboardMarkup createBack(String chatId) {
