@@ -272,22 +272,45 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n");
         message.append("Страна: ").append(country).append("\n\n");
 
-
         for (Product_User productUser : productUsers) {
             Product product = productUser.getProduct();
             User user = productUser.getUser();
             message.append("Название: ").append(product.getName()).append("\n");
             message.append("Цена: ").append(product.getPrice()).append("\n\n");
-
         }
-
 
         SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, message.toString());
 
-        // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
-        InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
-        adminMessage.setReplyMarkup(keyboardMarkup);
-        sendMessage(chatId, "Заказ отправлен с вами свяжутся");
+        if (userName != null && !userName.isEmpty()) {
+            // Create a button to allow the admin to contact the user directly
+            InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
+            adminMessage.setReplyMarkup(keyboardMarkup);
+        } else {
+            // If userName is not available, request the user's phone number
+            SendMessage requestPhoneNumberMessage = new SendMessage();
+            requestPhoneNumberMessage.setChatId(chatId);
+            requestPhoneNumberMessage.setText("Пожалуйста, предоставьте ваш номер телефона:");
+
+            ReplyKeyboardMarkup phoneNumberKeyboard = new ReplyKeyboardMarkup();
+            phoneNumberKeyboard.setResizeKeyboard(true);
+            phoneNumberKeyboard.setOneTimeKeyboard(true);
+
+            // Create a button to request the user's phone number
+            List<KeyboardRow> keyboard = new ArrayList<>();
+            KeyboardRow row = new KeyboardRow();
+            KeyboardButton requestPhoneNumberButton = new KeyboardButton("Отправить номер телефона");
+            requestPhoneNumberButton.setRequestContact(true);
+            row.add(requestPhoneNumberButton);
+            keyboard.add(row);
+            phoneNumberKeyboard.setKeyboard(keyboard);
+            requestPhoneNumberMessage.setReplyMarkup(phoneNumberKeyboard);
+
+            try {
+                execute(requestPhoneNumberMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
 
         try {
             execute(adminMessage);
@@ -295,6 +318,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
+
 
     private void sendSelectedToAdmin(String chatId, String userName) {
         // Отправка выбранных продуктов администратору
