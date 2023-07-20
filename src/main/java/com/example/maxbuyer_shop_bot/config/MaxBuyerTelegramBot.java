@@ -323,7 +323,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         if (userName != null && !userName.isEmpty()) {
             privateChatUrl = "https://t.me/" + userName;
         } else {
-            privateChatUrl = "https://t.me/" + chatId;
+            privateChatUrl = "https://web.telegram.org/k/#" + chatId;
             goToPrivateChatButton.setText("Перейти в приватный чат по chatId");
         }
 
