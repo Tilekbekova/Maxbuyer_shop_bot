@@ -64,6 +64,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             "\n" +
             "Сроки доставки от 4-14 дней (зависимости от страны)";
     private final AdminProductService adminProductService;
+  private static final  String warnings = "Важно: Для того чтобы обеспечить возможность связи с вами, пожалуйста, укажите ваш Telegram username при оформлении заказа. Ваш username поможет администратору связаться с вами легко и быстро. Если у вас еще нет username, пожалуйста, создайте его в настройках Telegram перед оформлением заказа. Спасибо за сотрудничество!";
 
 
     private static final String[] CATEGORIES = {"Брюки/шорты/юбки", "Платья", "Рубашки/топы", "Верхняя одежда", "Избранное"};
@@ -123,51 +124,31 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             sendMessage(String.valueOf(chatId), SECOND_QUESTION);
             createBack(String.valueOf(chatId));
         } else if (messageText.equalsIgnoreCase("Оформить заказ")) {
-
+           sendMessage(String.valueOf(chatId),warnings);
             List<String> countryValues = getCountryValues();
             ReplyKeyboardMarkup c = createKeyboardMarkup(countryValues);
             sendMessage1(String.valueOf(chatId), "Из какой вы страны?", c);
+
             userSessionManager.setCurrentStep(UserSessionManager.Step.ENTER_USER_COUNTRY);
         } else if (userSessionManager.getCurrentStep() == UserSessionManager.Step.ENTER_USER_COUNTRY) {
             User user = userRepository.findById(chatId).orElseGet(User::new);
             Country country = Country.fromValue(messageText);
             userSessionManager.setCountry(country);
-
-            // Check if the message contains the contact information
-            Contact contact = message.getContact();
-            if (contact != null) {
-                List<Product_User> productUsers = userProductRepository.findByUser(user);
-                if (productUsers.isEmpty()) {
-                    sendMessage(String.valueOf(chatId), "Корзина пуста.");
-                } else {
-                    sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, message.getFrom().getUserName(), userSessionManager.getCountry(), contact);
-                }
-                userSessionManager.reset();
+            List<Product_User> productUsers = userProductRepository.findByUser(user);
+            if (productUsers.isEmpty()) {
+                sendMessage(String.valueOf(chatId), "Корзина пуста.");
             } else {
-                // If contact information is missing, prompt the user to provide it with a contact button
-                ReplyKeyboardMarkup contactButton = new ReplyKeyboardMarkup();
-                KeyboardButton keyboardButton = new KeyboardButton("Отправить номер");
-                keyboardButton.setRequestContact(true);
-                List<KeyboardRow> keyboardRows = new ArrayList<>();
-                KeyboardRow row = new KeyboardRow();
-                row.add(keyboardButton);
-                keyboardRows.add(row);
-                contactButton.setKeyboard(keyboardRows);
-                contactButton.setResizeKeyboard(true);
-                SendMessage promptMessage = new SendMessage(String.valueOf(chatId), "Пожалуйста, отправьте ваш контакт для оформления заказа.");
-                promptMessage.setReplyMarkup(contactButton);
-                try {
-                    execute(promptMessage);
-                } catch (TelegramApiException e) {
-                    e.printStackTrace();
-                }
+                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, message.getFrom().getUserName(), userSessionManager.getCountry());
+
             }
+            userSessionManager.reset();
         } else if (messageText.equalsIgnoreCase("Корзина")) {
 
             createBack(String.valueOf(chatId));
             sendProductsInCart(String.valueOf(chatId));
 
         } else if (messageText.equalsIgnoreCase("Другое")) {
+
             sendSelectedToAdmin(String.valueOf(chatId), message.getFrom().getUserName());
             createBack(String.valueOf(chatId));
 
@@ -199,7 +180,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             sendAdminStartMessage(String.valueOf(chatId));
         } else if (messageText.equalsIgnoreCase("/menu")) {
             sendMessage(String.valueOf(chatId), getMainMenu());
-        } else if (messageText.equalsIgnoreCase("Все продукты")) {
+        } else if (messageText.equalsIgnoreCase("Все товары")) {
             sendProducts(String.valueOf(chatId));
         } else if (messageText.equalsIgnoreCase("Добавить товар")) {
             sendMessage(String.valueOf(chatId), "Введите имя товара:");
@@ -289,52 +270,61 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
     }
 
-    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName, Country country,Contact contact) {
-        // Отправка выбранных продуктов администратору
-        StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n");
-        message.append("Страна: ").append(country).append("\n\n");
-        message.append("Номер: ").append(contact.getPhoneNumber()).append("\n\n");
+    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName, Country country) {
+
+          if (userName != null && !userName.isEmpty()) {
+              // Отправка выбранных продуктов администратору
+              StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n");
+              message.append("Страна: ").append(country).append("\n\n");
 
 
-        for (Product_User productUser : productUsers) {
-            Product product = productUser.getProduct();
-            User user = productUser.getUser();
-            message.append("Название: ").append(product.getName()).append("\n");
-            message.append("Цена: ").append(product.getPrice()).append("\n\n");
+              for (Product_User productUser : productUsers) {
+                  Product product = productUser.getProduct();
+                  message.append("Название: ").append(product.getName()).append("\n");
+                  message.append("Цена: ").append(product.getPrice()).append("\n\n");
 
-        }
+              }
 
 
-        SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, message.toString());
+              SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, message.toString());
 
-        // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
-        InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
-        adminMessage.setReplyMarkup(keyboardMarkup);
-        sendMessage(chatId, "Заказ отправлен с вами свяжутся");
+              // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
+              InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
+              adminMessage.setReplyMarkup(keyboardMarkup);
+              sendMessage(chatId, "Заказ отправлен с вами свяжутся");
+              try {
+                  execute(adminMessage);
+              } catch (TelegramApiException e) {
+                  e.printStackTrace();
+              }
+          }else {
+              String warningMessage = "У вас отсутствует Telegram username. Пожалуйста, создайте его в настройках Telegram и отправьте заявку заново.";
+              sendMessage(chatId,warningMessage);
+          }
 
-        try {
-            execute(adminMessage);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
     }
 
     private void sendSelectedToAdmin(String chatId, String userName) {
         // Отправка выбранных продуктов администратору
 
+        if (userName != null && !userName.isEmpty()) {
+            SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, "Заказ пользователя " + chatId + ":\n" + "Другое");
 
-        SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, "Заказ пользователя " + chatId + ":\n" + "Другое");
+            // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
+            InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
+            adminMessage.setReplyMarkup(keyboardMarkup);
+            sendMessage(chatId, "C вами свяжутся");
 
-        // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
-        InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
-        adminMessage.setReplyMarkup(keyboardMarkup);
-        sendMessage(chatId, "C вами свяжутся");
-
-        try {
-            execute(adminMessage);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
+            try {
+                execute(adminMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }else {
+            String warningMessage = "У вас отсутствует Telegram username. Пожалуйста, создайте его в настройках Telegram и отправьте заявку заново.";
+            sendMessage(chatId,warningMessage);
         }
+
     }
 
 
@@ -346,8 +336,9 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         if (userName != null && !userName.isEmpty()) {
             privateChatUrl = "https://t.me/" + userName;
         } else {
-            privateChatUrl = "https://web.telegram.org/k/#" + chatId;
+            privateChatUrl = "https://t.me/" + chatId;
             goToPrivateChatButton.setText("Перейти в приватный чат по chatId");
+
         }
 
         goToPrivateChatButton.setUrl(privateChatUrl);
@@ -361,7 +352,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
         return keyboardMarkup;
     }
-
 
 
     private InlineKeyboardMarkup createBack(String chatId) {
@@ -960,7 +950,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         row1.add("Добавить товар");
 
         KeyboardRow row2 = new KeyboardRow();
-        row2.add("Все продукты");
+        row2.add("Все товары");
 
 
         keyboard.add(row1);
