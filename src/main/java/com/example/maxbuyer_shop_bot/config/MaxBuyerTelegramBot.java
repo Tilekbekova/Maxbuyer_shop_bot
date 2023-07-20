@@ -132,14 +132,21 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             User user = userRepository.findById(chatId).orElseGet(User::new);
             Country country = Country.fromValue(messageText);
             userSessionManager.setCountry(country);
-            List<Product_User> productUsers = userProductRepository.findByUser(user);
-            if (productUsers.isEmpty()) {
-                sendMessage(String.valueOf(chatId), "Корзина пуста.");
-            } else {
-                sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, message.getFrom().getUserName(), userSessionManager.getCountry());
 
+            // Check if the message contains the contact information
+            Contact contact = message.getContact();
+            if (contact != null) {
+                List<Product_User> productUsers = userProductRepository.findByUser(user);
+                if (productUsers.isEmpty()) {
+                    sendMessage(String.valueOf(chatId), "Корзина пуста.");
+                } else {
+                    sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, message.getFrom().getUserName(), userSessionManager.getCountry(), contact);
+                }
+                userSessionManager.reset();
+            } else {
+                // If contact information is missing, prompt the user to provide it
+                sendMessage(String.valueOf(chatId), "Пожалуйста, отправьте ваш контакт для оформления заказа.");
             }
-            userSessionManager.reset();
         } else if (messageText.equalsIgnoreCase("Корзина")) {
 
             createBack(String.valueOf(chatId));
@@ -267,10 +274,11 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
 
     }
 
-    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName, Country country) {
+    private void sendSelectedProductsToAdmin(String chatId, List<Product_User> productUsers, String userName, Country country,Contact contact) {
         // Отправка выбранных продуктов администратору
         StringBuilder message = new StringBuilder("Заказ пользователя " + chatId + ":\n");
         message.append("Страна: ").append(country).append("\n\n");
+        message.append("Номер: ").append(contact.getPhoneNumber()).append("\n\n");
 
 
         for (Product_User productUser : productUsers) {
