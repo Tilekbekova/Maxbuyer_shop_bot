@@ -1,8 +1,8 @@
 package com.example.maxbuyer_shop_bot.entity;
 
 public enum Subcategory {
-    MEN("Мужина"),
-    WOMEN("Женищина");
+    MEN("Мужчина"),
+    WOMEN("Женщина");
     private String value;
 
     Subcategory(String value) {
