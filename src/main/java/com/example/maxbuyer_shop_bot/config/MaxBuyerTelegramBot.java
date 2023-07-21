@@ -1065,6 +1065,9 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             execute(message);
         } catch (TelegramApiException e) {
             e.printStackTrace();
+
+
+
         }
 
     }
