@@ -52,9 +52,11 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
     private UserSessionManager userSessionManager;
     private static final String BOT_TOKEN = "6339506277:AAEHCDapOS_gOLsHbbW054bDSxLhxjFLUJE";
 
-    private static final String WELCOME_MESSAGE = "Доброе пожаловать в Maxbuyer!!! Давайте знакомиться – меня зовут Максим, я являюсь байером в Корее. Занимаюсь выкупом оригинальных товаров и осуществляю доставку по всему миру!\nДля того, чтобы смотреть весь ассортимент, нажмите кнопку «Старт»!";
+    private static final String WELCOME_MESSAGE = "Доброе пожаловать в Maxbuyer\uD83E\uDD73!!!\n" +
+            "Давайте знакомиться – меня зовут Максим, я являюсь байером в Корее. Занимаюсь выкупом оригинальных товаров из Кореи\uD83C\uDDF0\uD83C\uDDF7  и осуществляю доставку по всему миру\uD83C\uDF0D! \n" +
+            "Для того, чтобы смотреть весь ассортимент, нажмите кнопку «Старт»!\uD83E\uDEE1";
     private static final String MAIN_MENU_MESSAGE = "Выберите один из пунктов главного меню:";
-    private static final String ADMIN_CHAT_ID = "1068426745";
+    private static final String ADMIN_CHAT_ID = "173705134";
     private static final String FIRST_QUESTION = "1) ВЫГОДА - чаще всего заплатив мне за мои услуги байера и доставку , Вы все равно сэкономите свои деньги , так как многие товары в Корее дешевле чем в странах СНГ ✅\n" +
             "2) БРАК - Я лично нахожусь в Корее и любой отправляемый товар проходит проверку на качество , после чего отправляется ✅\n" +
             "3) ЭКСКЛЮЗИВ - по мимо того что в наших странах завышенные цены , так еще и очень часто покупатель сталкивается с проблемой выбора , его банально нет. В Корее Вы можете найти одежду и многое другое , чего точно нет ни у кого в вашем городе✅\n" +
@@ -140,7 +142,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 sendMessage(String.valueOf(chatId), "Корзина пуста.");
             } else {
                 sendSelectedProductsToAdmin(String.valueOf(chatId), productUsers, message.getFrom().getUserName(), userSessionManager.getCountry());
-
+                createBack(String.valueOf(chatId));
             }
             userSessionManager.reset();
         } else if (messageText.equalsIgnoreCase("Корзина")) {

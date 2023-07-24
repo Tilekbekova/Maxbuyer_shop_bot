@@ -3,9 +3,9 @@ package com.example.maxbuyer_shop_bot.entity;
 public enum Country {
 
     KYRGYSTAN("Кыргызстан"),
-    UZBEKISTAN("Узбекитстан"),
+    UZBEKISTAN("Узбекистан"),
     RUSSIA("Россия"),
-   KAZAKHSTAN("Казакстан");
+   KAZAKHSTAN("Казахстан");
 
 
 
