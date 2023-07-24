@@ -106,6 +106,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 onAdminCallbackQueryReceived(chatId, callbackData, callbackQuery);
             } else {
                 onUserCallbackQueryReceived(chatId, callbackData, callbackQuery);
+                createBack(String.valueOf(chatId));
             }
         }
     }
