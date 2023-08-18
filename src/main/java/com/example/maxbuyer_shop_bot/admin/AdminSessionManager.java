@@ -17,7 +17,7 @@ import java.util.Map;
 public class AdminSessionManager {
     private Step currentStep;
     private String productName;
-    private double productPrice;
+    private String productPrice;
     private Category productCategory;
 
     private Subcategory subcategory;
@@ -31,7 +31,7 @@ public class AdminSessionManager {
     public void reset() {
         currentStep = Step.NONE;
         productName = "";
-        productPrice = 0.0;
+        productPrice = "";
         productCategory = null;
         subcategory = null;// Set the category to null
         imageUrl = "";

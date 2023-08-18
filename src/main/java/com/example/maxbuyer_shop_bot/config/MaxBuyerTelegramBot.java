@@ -56,7 +56,8 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             "Давайте знакомиться – меня зовут Максим, я являюсь байером в Корее. Занимаюсь выкупом оригинальных товаров из Кореи\uD83C\uDDF0\uD83C\uDDF7  и осуществляю доставку по всему миру\uD83C\uDF0D! \n" +
             "Для того, чтобы смотреть весь ассортимент, нажмите кнопку «Старт»!\uD83E\uDEE1";
     private static final String MAIN_MENU_MESSAGE = "Выберите один из пунктов главного меню:";
-    private static final String ADMIN_CHAT_ID = "5954381822";
+    private static final String ADMIN_CHAT_ID1 = "5954608189";
+    private static final String ADMIN_CHAT_ID2 = "1068426745";
     private static final String FIRST_QUESTION = "1) ВЫГОДА - чаще всего заплатив мне за мои услуги байера и доставку , Вы все равно сэкономите свои деньги , так как многие товары в Корее дешевле чем в странах СНГ ✅\n" +
             "2) БРАК - Я лично нахожусь в Корее и любой отправляемый товар проходит проверку на качество , после чего отправляется ✅\n" +
             "3) ЭКСКЛЮЗИВ - по мимо того что в наших странах завышенные цены , так еще и очень часто покупатель сталкивается с проблемой выбора , его банально нет. В Корее Вы можете найти одежду и многое другое , чего точно нет ни у кого в вашем городе✅\n" +
@@ -307,7 +308,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             }
 
 
-            SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, message.toString());
+            SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID1, message.toString());
 
             // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
             InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
@@ -329,7 +330,7 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
         // Отправка выбранных продуктов администратору
 
         if (userName != null && !userName.isEmpty()) {
-            SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID, "Заказ пользователя " + chatId + ":\n" + "Другое");
+            SendMessage adminMessage = new SendMessage(ADMIN_CHAT_ID1, "Заказ пользователя " + chatId + ":\n" + "Другое");
 
             // Создайте InlineKeyboardMarkup с кнопкой "Перейти в ЛС"
             InlineKeyboardMarkup keyboardMarkup = createGoToPrivateChatKeyboard(chatId, userName);
@@ -492,23 +493,21 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
                 adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_PRICE);
                 break;
             case ENTER_PRODUCT_PRICE:
-                double price;
-                try {
-                    price = Double.parseDouble(messageText);
-                    adminSessionManager.setProductPrice(price);
+                String price;
+
+                price = messageText;
+                adminSessionManager.setProductPrice(price);
 
 
-                    List<String> categoryValues = getCategoryValues();
+                List<String> categoryValues = getCategoryValues();
 
 
-                    ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
+                ReplyKeyboardMarkup categoryKeyboardMarkup = createKeyboardMarkup(categoryValues);
 
 
-                    sendMessage1(chatId, "Выберите категорию товара:", categoryKeyboardMarkup);
-                    adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_CATEGORY);
-                } catch (NumberFormatException e) {
-                    sendMessage(chatId, "Некорректная цена. Пожалуйста, введите числовое значение.");
-                }
+                sendMessage1(chatId, "Выберите категорию товара:", categoryKeyboardMarkup);
+                adminSessionManager.setCurrentStep(AdminSessionManager.Step.ENTER_PRODUCT_CATEGORY);
+
                 break;
             case ENTER_PRODUCT_CATEGORY:
 
@@ -817,7 +816,6 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
     }
 
 
-
     private void sendProductsInCart(String chatId) {
         User user = userRepository.findById(Long.valueOf(chatId)).orElse(null);
         if (user == null) {
@@ -1070,14 +1068,13 @@ public class MaxBuyerTelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
 
 
-
         }
 
     }
 
 
     private boolean isAdmin(String chatId) {
-        return chatId.equals(ADMIN_CHAT_ID);
+        return chatId.equals(ADMIN_CHAT_ID1) || chatId.equals(ADMIN_CHAT_ID2);
     }
 
 

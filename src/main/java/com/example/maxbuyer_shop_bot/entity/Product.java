@@ -14,7 +14,7 @@
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
         private String name;
-        private double price;
+        private String price;
         private Category category;
         private Subcategory subcategory;
         private String imageUrl;
